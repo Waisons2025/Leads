@@ -170,3 +170,6 @@ process.on('SIGINT', async () => {
 });
 
 startServer();
++  // Trust Railway proxy for rate limiting
++  app.set('trust proxy', 1);
++ 
