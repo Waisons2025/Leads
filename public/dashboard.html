@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Dashboard - Waisons Realty</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f6fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .waisons-logo {
+            position: absolute;
+            left: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .waisons-logo img {
+            height: 30px;
+            width: auto;
+            filter: brightness(0) invert(1);
+        }
+        
+        .waisons-logo-text {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .card h3 {
+            color: #1e3a5f;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .metric-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid;
+        }
+        
+        .metric-card.primary { border-left-color: #1e3a5f; }
+        .metric-card.success { border-left-color: #28a745; }
+        .metric-card.warning { border-left-color: #ffc107; }
+        .metric-card.danger { border-left-color: #dc3545; }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .metric-change {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        
+        .metric-change.positive { color: #28a745; }
+        .metric-change.negative { color: #dc3545; }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .data-table th,
+        .data-table td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .status-new { background: #e3f2fd; color: #1976d2; }
+        .status-contacted { background: #f3e5f5; color: #7b1fa2; }
+        .status-qualified { background: #e8f5e8; color: #2e7d2e; }
+        .status-hot { background: #ffebee; color: #c62828; }
+        
+        .score-bar {
+            width: 100%;
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .score-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .score-high { background: #28a745; }
+        .score-medium { background: #ffc107; }
+        .score-low { background: #dc3545; }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 1.1rem;
+            color: #666;
+        }
+        
+        .loading i {
+            margin-right: 0.5rem;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .filters {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group label {
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .metric-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="waisons-logo">
+            <img src="WR-logo.png" alt="Waisons Realty Logo">
+            <span class="waisons-logo-text">WAISONS REALTY</span>
+        </div>
+        <h1><i class="fas fa-chart-dashboard"></i> Lead Dashboard</h1>
+        <p>Southeast Michigan Real Estate Lead Analytics - Metro Detroit</p>
+    </div>
+
+    <div class="container">
+        <!-- Date Range Filter -->
+        <div class="filters">
+            <div class="filter-group">
+                <label for="dateRange">Date Range:</label>
+                <select id="dateRange" onchange="updateDashboard()">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="60">Last 60 days</option>
+                    <option value="90">Last 90 days</option>
+                </select>
+                
+                <label for="refresh">Auto Refresh:</label>
+                <select id="refresh" onchange="toggleAutoRefresh()">
+                    <option value="0">Off</option>
+                    <option value="30">30 seconds</option>
+                    <option value="60">1 minute</option>
+                    <option value="300">5 minutes</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="metric-cards" id="metricCards">
+            <div class="loading">
+                <i class="fas fa-spinner"></i>
+                Loading dashboard data...
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Lead Sources Chart -->
+            <div class="card">
+                <h3><i class="fas fa-chart-pie"></i> Lead Sources</h3>
+                <div class="chart-container">
+                    <canvas id="sourcesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Daily Trends Chart -->
+            <div class="card">
+                <h3><i class="fas fa-chart-line"></i> Daily Lead Trends</h3>
+                <div class="chart-container">
+                    <canvas id="trendsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Conversion Funnel -->
+            <div class="card">
+                <h3><i class="fas fa-funnel-dollar"></i> Conversion Funnel</h3>
+                <div class="chart-container">
+                    <canvas id="funnelChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Lead Quality Distribution -->
+            <div class="card">
+                <h3><i class="fas fa-star"></i> Lead Quality Distribution</h3>
+                <div class="chart-container">
+                    <canvas id="qualityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Hot Leads -->
+            <div class="card">
+                <h3><i class="fas fa-fire"></i> Hot Leads</h3>
+                <div id="hotLeads">
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i>
+                        Loading hot leads...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Performing Campaigns -->
+            <div class="card">
+                <h3><i class="fas fa-trophy"></i> Top Campaigns</h3>
+                <table class="data-table" id="campaignTable">
+                    <thead>
+                        <tr>
+                            <th>Campaign</th>
+                            <th>Leads</th>
+                            <th>Avg Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="3" class="loading">Loading campaigns...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let charts = {};
+        let refreshInterval = null;
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDashboard();
+        });
+        
+        // Update entire dashboard
+        async function updateDashboard() {
+            const dateRange = document.getElementById('dateRange').value;
+            
+            try {
+                // Fetch dashboard data
+                const response = await fetch(`/api/analytics/dashboard?dateRange=${dateRange}`);
+                const data = await response.json();
+                
+                // Update metrics cards
+                updateMetricCards(data);
+                
+                // Update charts
+                updateSourcesChart(data.sources);
+                updateTrendsChart(data.trends);
+                updateFunnelChart(data.funnel);
+                updateQualityChart(data.quality);
+                
+                // Update tables
+                updateHotLeads();
+                updateCampaignTable(data.campaigns);
+                
+                // Update last updated time
+                document.querySelector('.header p').textContent = 
+                    `Real Estate Lead Generation Analytics - Last updated: ${new Date().toLocaleTimeString()}`;
+                
+            } catch (error) {
+                console.error('Error updating dashboard:', error);
+                showError('Failed to load dashboard data');
+            }
+        }
+        
+        // Update metric cards
+        function updateMetricCards(data) {
+            const container = document.getElementById('metricCards');
+            const funnel = data.funnel || {};
+            const quality = data.quality || {};
+            
+            container.innerHTML = `
+                <div class="metric-card primary">
+                    <div class="metric-value">${funnel.leads || 0}</div>
+                    <div class="metric-label">Total Leads</div>
+                </div>
+                
+                <div class="metric-card success">
+                    <div class="metric-value">${Math.round(quality.averageScore || 0)}</div>
+                    <div class="metric-label">Average Score</div>
+                </div>
+                
+                <div class="metric-card warning">
+                    <div class="metric-value">${funnel.qualified || 0}</div>
+                    <div class="metric-label">Qualified Leads</div>
+                </div>
+                
+                <div class="metric-card danger">
+                    <div class="metric-value">${funnel.conversionRates?.overallConversion || 0}%</div>
+                    <div class="metric-label">Conversion Rate</div>
+                </div>
+            `;
+        }
+        
+        // Update sources pie chart
+        function updateSourcesChart(sources) {
+            const ctx = document.getElementById('sourcesChart').getContext('2d');
+            
+            if (charts.sources) {
+                charts.sources.destroy();
+            }
+            
+            const colors = ['#1e3a5f', '#2c5282', '#28a745', '#ffc107', '#dc3545', '#6c757d'];
+            
+            charts.sources = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: sources?.map(s => s._id?.replace('_', ' ').toUpperCase()) || ['No Data'],
+                    datasets: [{
+                        data: sources?.map(s => s.totalLeads) || [1],
+                        backgroundColor: colors.slice(0, sources?.length || 1),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update trends line chart
+        function updateTrendsChart(trends) {
+            const ctx = document.getElementById('trendsChart').getContext('2d');
+            
+            if (charts.trends) {
+                charts.trends.destroy();
+            }
+            
+            charts.trends = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: trends?.map(t => new Date(t.date).toLocaleDateString()) || ['No Data'],
+                    datasets: [{
+                        label: 'Leads per Day',
+                        data: trends?.map(t => t.leads) || [0],
+                        borderColor: '#2c5282',
+                        backgroundColor: 'rgba(44, 82, 130, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update funnel chart
+        function updateFunnelChart(funnel) {
+            const ctx = document.getElementById('funnelChart').getContext('2d');
+            
+            if (charts.funnel) {
+                charts.funnel.destroy();
+            }
+            
+            charts.funnel = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Leads', 'Contacted', 'Qualified', 'Appointment', 'Client', 'Closed'],
+                    datasets: [{
+                        label: 'Count',
+                        data: [
+                            funnel?.leads || 0,
+                            funnel?.contacted || 0,
+                            funnel?.qualified || 0,
+                            funnel?.appointment || 0,
+                            funnel?.clients || 0,
+                            funnel?.closed || 0
+                        ],
+                        backgroundColor: [
+                            '#6c757d',
+                            '#17a2b8',
+                            '#28a745',
+                            '#ffc107',
+                            '#fd7e14',
+                            '#dc3545'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update quality distribution chart
+        function updateQualityChart(quality) {
+            const ctx = document.getElementById('qualityChart').getContext('2d');
+            
+            if (charts.quality) {
+                charts.quality.destroy();
+            }
+            
+            charts.quality = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['High (80+)', 'Medium (60-79)', 'Low (<60)'],
+                    datasets: [{
+                        data: [
+                            quality?.highScore || 0,
+                            quality?.mediumScore || 0,
+                            quality?.lowScore || 0
+                        ],
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update hot leads table
+        async function updateHotLeads() {
+            try {
+                const container = document.getElementById('hotLeads');
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">Demo mode - Connect to Railway PostgreSQL to see live data</p>';
+            } catch (error) {
+                console.error('Error loading hot leads:', error);
+            }
+        }
+        
+        // Update campaign performance table
+        function updateCampaignTable(campaigns) {
+            const tbody = document.querySelector('#campaignTable tbody');
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #666;">Demo mode - Connect to Railway PostgreSQL to see live data</td></tr>';
+        }
+        
+        // Toggle auto refresh
+        function toggleAutoRefresh() {
+            const interval = parseInt(document.getElementById('refresh').value);
+            
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+            
+            if (interval > 0) {
+                refreshInterval = setInterval(updateDashboard, interval * 1000);
+            }
+        }
+        
+        // Show error message
+        function showError(message) {
+            console.error(message);
+        }
+    </script>
+</body>
+</html>
